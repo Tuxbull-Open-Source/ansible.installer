@@ -201,7 +201,8 @@ you want `/etc/profile.d`, `/etc/ansible`, or system-wide completion files.
 - `RAW_BASE=https://raw.githubusercontent.com/Tuxbull-Open-Source/ansible.installer/refs/heads/main`
 - `UV_BIN=/usr/local/bin/uv` in the default system layout; userspace installs auto-place `uv` under `${ANSIBLE_HOME}/apps/bin/uv` when missing
 - `UV_PYTHON_INSTALL_DIR=/opt/ansible/apps/python` in the default system layout, so virtualenv Python symlinks point either to system Python or a shared uv-managed Python, never below root-private paths such as `/root/.local/share/uv`
-- `ANSIBLE_PIP_PACKAGES=ansible==${ANSIBLE_VERSION} argcomplete passlib jmespath netaddr dnspython`
+- `ANSIBLE_REQUIREMENTS_FILE=` optional requirements manifest URL/path override; default: `${RAW_BASE}/requirements.txt`
+- `ANSIBLE_PIP_PACKAGES=` optional whitespace-separated package-list override; when set, it replaces the default Python requirements manifest
 
 `ANSIBLE_CORE_VERSION` is still accepted as a legacy input alias. The installer still installs the Ansible community package (`ansible==${ANSIBLE_VERSION}`), not an `ansible-core==13.x` package. Yes, naming is a trap. We step around it.
 
@@ -279,15 +280,26 @@ ansible-pip-install jmespath netaddr dnspython
 uv pip install --upgrade --python "$ANSIBLE_VENV_PATH/bin/python" <packages>
 ```
 
-The installer already includes a small default control-node package set via
-`ANSIBLE_PIP_PACKAGES`: `ansible==${ANSIBLE_VERSION}`, `argcomplete`, `passlib`,
-`jmespath`, `netaddr` and `dnspython`. Override or extend it at install time if
-your playbooks need more controller-side Python modules:
+The default Python baseline is stored in the repository's `requirements.txt` and
+is downloaded through `RAW_BASE` during installation. It renders the selected
+`ANSIBLE_VERSION`, then installs Ansible, argcomplete, passlib, jmespath,
+netaddr, dnspython, and the HTTP baseline (`requests`, `urllib3`, `certifi`,
+`six`) into the active runtime.
+
+Use `ANSIBLE_PIP_PACKAGES` only when you deliberately need to replace that
+baseline with a whitespace-separated package list. For a custom reproducible
+manifest, point `ANSIBLE_REQUIREMENTS_FILE` to an HTTPS URL or an approved local
+`file://` path during controlled validation.
+
+Project-specific Ansible collection requirements are deliberately separate:
 
 ```bash
-curl -L ansible-uv.bitbull.ch \
-  | sudo -n env ANSIBLE_PIP_PACKAGES='ansible==13.4.0 argcomplete passlib jmespath netaddr dnspython pywinrm requests-ntlm' sh
+ansible-galaxy collection install -r collections/requirements.yml
 ```
+
+The shipped collection manifest contains broadly useful controller collections;
+install cloud, virtualization, database, or vendor SDKs only in the project
+that needs them, rather than inflating every control-node runtime.
 
 Use an existing `uv` binary:
 

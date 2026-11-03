@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.0.2] - 2026-11-03
+
+### Added
+
+- Add a version-rendered default `requirements.txt` baseline for installer
+  runtime dependencies.
+- Add `collections/requirements.yml` with optional common controller
+  collections.
+- Add `ANSIBLE_REQUIREMENTS_FILE` for a reproducible custom requirements
+  manifest.
+
+### Changed
+
+- Keep `ANSIBLE_PIP_PACKAGES` as an explicit full-baseline override rather
+  than the implicit default dependency source.
+
+### Verified
+
+- Fresh Rocky Linux 10 installation rendered the selected Ansible version into
+  the managed requirements file, installed the baseline, passed imports and
+  `ansible localhost -m ping`, and reused the runtime on a second run.
+
 ## [1.0.1] - 2026-11-03
 
 ### Changed
@@ -8,6 +30,10 @@
   `Tuxbull-Open-Source/ansible.installer`.
 - Prevent root-sourced `ANSIBLE_LOCAL_TEMP` and `ANSIBLE_LOG_PATH` values from
   leaking into installer commands executed as a selected non-root system user.
+- Add a version-rendered default `requirements.txt` baseline and optional
+  `ANSIBLE_REQUIREMENTS_FILE` override; keep `ANSIBLE_PIP_PACKAGES` as an
+  explicit full-baseline override.
+- Add `collections/requirements.yml` for optional common controller collections.
 - Ensure a generated userspace profile overrides inherited system-profile
   runtime variables, including paths, virtualenv, configuration, temporary, and
   log settings.

@@ -66,7 +66,17 @@ ANSIBLE_VENV_PATH="${ANSIBLE_VENV_PATH:-${ANSIBLE_APPS_DIR}/${ANSIBLE_RUNTIME}}"
 ANSIBLE_SWITCH_BIN="${ANSIBLE_SWITCH_BIN:-${ANSIBLE_BIN_DIR}/ansible-local-switch}"
 ANSIBLE_ADOC_BIN="${ANSIBLE_ADOC_BIN:-${ANSIBLE_BIN_DIR}/adoc}"
 ANSIBLE_INSTALL_OS_PACKAGES="${ANSIBLE_INSTALL_OS_PACKAGES:-}"
-ANSIBLE_PIP_PACKAGES="${ANSIBLE_PIP_PACKAGES:-ansible==${ANSIBLE_VERSION} argcomplete passlib jmespath netaddr dnspython}"
+# `ANSIBLE_PIP_PACKAGES` remains an override for a whitespace-separated custom
+# package list. When it is not set, install the version-rendered repository
+# requirements.txt manifest for a reproducible baseline.
+if [ -n "${ANSIBLE_PIP_PACKAGES+x}" ]; then
+  ANSIBLE_PIP_PACKAGES_MODE=explicit
+  ANSIBLE_PIP_PACKAGES="${ANSIBLE_PIP_PACKAGES}"
+else
+  ANSIBLE_PIP_PACKAGES_MODE=manifest
+  ANSIBLE_PIP_PACKAGES=""
+fi
+ANSIBLE_REQUIREMENTS_FILE="${ANSIBLE_REQUIREMENTS_FILE:-}"
 # Default concrete layout in system scope: /opt/ansible/apps/<runtime>, /opt/ansible/current,
 # /etc/profile.d/ansible.sh, /etc/ansible, /usr/local/bin/ansible-local-switch, adoc.
 # User scope keeps role-owned integration below ${ANSIBLE_HOME}/apps/profile.d/ansible.sh,
@@ -489,10 +499,22 @@ else
   run_uv_as_install_user venv --python "$PYTHON_VERSION" "$ANSIBLE_VENV_PATH"
 fi
 
-log "Installing/upgrading Python packages: ${ANSIBLE_PIP_PACKAGES}"
-# Reruns use the equivalent of: uv pip install --upgrade ${ANSIBLE_PIP_PACKAGES}
-# shellcheck disable=SC2086 # intentional word splitting: package specs are a whitespace-separated list.
-run_uv_as_install_user pip install --upgrade --python "$ANSIBLE_VENV_PATH/bin/python" $ANSIBLE_PIP_PACKAGES
+if [ "$ANSIBLE_PIP_PACKAGES_MODE" = "explicit" ]; then
+  log "Installing/upgrading explicit Python packages: ${ANSIBLE_PIP_PACKAGES}"
+  # shellcheck disable=SC2086 # Intentional word splitting: package specs are a whitespace-separated list.
+  run_uv_as_install_user pip install --upgrade --python "$ANSIBLE_VENV_PATH/bin/python" $ANSIBLE_PIP_PACKAGES
+else
+  requirements_source="${ANSIBLE_REQUIREMENTS_FILE:-$RAW_BASE/requirements.txt}"
+  requirements_tmp="${ANSIBLE_APPS_DIR}/requirements.${ANSIBLE_RUNTIME}.txt.tmp.$$"
+  requirements_rendered="${ANSIBLE_APPS_DIR}/requirements.${ANSIBLE_RUNTIME}.txt"
+  log "Installing/upgrading Python packages from $requirements_source"
+  curl -fsSL "$requirements_source" -o "$requirements_tmp"
+  sed "s|@ANSIBLE_VERSION@|$(sed_replacement_escape "$ANSIBLE_VERSION")|g" "$requirements_tmp" > "$requirements_rendered"
+  rm -f "$requirements_tmp"
+  if [ "$(id -u)" -eq 0 ]; then chown "$(owner_group)" "$requirements_rendered"; fi
+  chmod 0640 "$requirements_rendered"
+  run_uv_as_install_user pip install --upgrade --python "$ANSIBLE_VENV_PATH/bin/python" -r "$requirements_rendered"
+fi
 
 log "Updating active runtime symlink"
 ln -sfn "$ANSIBLE_VENV_PATH" "$ANSIBLE_HOME/current.tmp"
