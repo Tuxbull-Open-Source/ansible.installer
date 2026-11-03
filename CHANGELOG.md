@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.0.1] - 2026-11-03
+
+### Changed
+
+- Align the canonical GitHub source and installer `RAW_BASE` with
+  `Tuxbull-Open-Source/ansible.installer`.
+- Prevent root-sourced `ANSIBLE_LOCAL_TEMP` and `ANSIBLE_LOG_PATH` values from
+  leaking into installer commands executed as a selected non-root system user.
+- Ensure a generated userspace profile overrides inherited system-profile
+  runtime variables, including paths, virtualenv, configuration, temporary, and
+  log settings.
+- Update static checks to protect the transferred source location and
+  maintainer guidance path.
+
+### Verified
+
+- Fresh Rocky Linux 10 system-scope and user-scope installer validation using
+  repository-local payloads, including same-input reruns and runtime checks.
+
 All notable changes to `ansible.installer` are documented here.
 
 This project follows semantic versioning where practical.
@@ -34,7 +53,7 @@ This project follows semantic versioning where practical.
 - `ansible-pip-install` interactive alias for installing additional packages into the active uv-managed Ansible runtime.
 - `PYTHONDONTWRITEBYTECODE=1` profile/runtime handling plus `__pycache__` cleanup during reruns to preserve the managed permission model.
 - Static test coverage for installer paths, docs, payload ownership intent, user/system scope behavior, package defaults and profile integration.
-- `AGENT.md` maintainer guide for future agent and human maintenance work.
+- `AGENTS.md` maintainer guide for future agent and human maintenance work.
 
 ### Changed
 

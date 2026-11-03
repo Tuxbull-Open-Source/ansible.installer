@@ -1,6 +1,6 @@
 # AGENT.md
 
-Operational guide for AI agents and maintainers working on `joe-speedboat/ansible.installer`.
+Operational guide for AI agents and maintainers working on `Tuxbull-Open-Source/ansible.installer`.
 
 ## Project purpose
 
@@ -26,7 +26,7 @@ curl -L ansible-uv.bitbull.ch | sudo -n sh
 or directly from GitHub raw:
 
 ```bash
-curl -L https://raw.githubusercontent.com/joe-speedboat/ansible.installer/refs/heads/main/ansible/ansible_setup.sh | sudo -n sh
+curl -L https://raw.githubusercontent.com/Tuxbull-Open-Source/ansible.installer/refs/heads/main/ansible/ansible_setup.sh | sudo -n sh
 ```
 
 ## Repository layout
@@ -164,6 +164,6 @@ For public release validation after merge, test the exact public one-liner on a 
 3. Run lab validation for installer behavior changes.
 4. Secret-scan public docs and examples.
 5. Commit and push to a branch or fork.
-6. Open or update a PR to `joe-speedboat/ansible.installer:main`.
+6. Open or update a PR to `Tuxbull-Open-Source/ansible.installer:main`.
 7. Verify the PR is open and its `headRefOid` matches the pushed commit.
 8. After merge, create the `vX.Y.Z` tag from the merged upstream `main` using an account with upstream write permission.
