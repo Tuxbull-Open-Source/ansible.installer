@@ -6,7 +6,7 @@ ADOC = ROOT / "ansible" / "files" / "usr" / "local" / "bin" / "adoc"
 PROFILE = ROOT / "ansible" / "files" / "etc" / "profile.d" / "ansible.sh"
 SWITCH = ROOT / "ansible" / "files" / "usr" / "local" / "bin" / "ansible-local-switch"
 README = ROOT / "README.md"
-AGENT = ROOT / "AGENT.md"
+AGENT = ROOT / "AGENTS.md"
 CHANGELOG = ROOT / "CHANGELOG.md"
 
 
@@ -15,7 +15,7 @@ def test_installer_files_exist():
     assert ADOC.exists(), "adoc must be vendored under ansible/files/usr/local/bin"
     assert PROFILE.exists(), "profile script must be outsourced under ansible/files/etc/profile.d"
     assert SWITCH.exists(), "switch helper must be outsourced under ansible/files/usr/local/bin"
-    assert AGENT.exists(), "AGENT.md must document maintainer and agent workflow"
+    assert AGENT.exists(), "AGENTS.md must document maintainer and agent workflow"
     assert CHANGELOG.exists(), "CHANGELOG.md must document release history"
 
 
@@ -38,7 +38,7 @@ def test_release_docs_cover_v1_0_0_and_maintenance_workflow():
 
 def test_one_liner_documented():
     text = README.read_text()
-    marker = "curl -L https://raw.githubusercontent.com/joe-speedboat/ansible.installer/refs/heads/main/ansible/ansible_setup.sh | sudo -n sh"
+    marker = "curl -L https://raw.githubusercontent.com/Tuxbull-Open-Source/ansible.installer/refs/heads/main/ansible/ansible_setup.sh | sudo -n sh"
     assert marker in text
     assert text.count(marker) == 1
 
@@ -87,7 +87,7 @@ def test_readme_documents_supported_variables_with_examples():
 def test_installer_uses_single_repo_for_payload_files():
     text = SETUP.read_text()
     assert "RAW_BASE" in text
-    assert "joe-speedboat/ansible.installer" in text
+    assert "Tuxbull-Open-Source/ansible.installer" in text
     assert "linux.scripts" not in text, "payload files must come from ansible.installer, not another repo"
     assert "ansible/files/usr/local/bin/adoc" in text
     assert "ansible/files/etc/profile.d/ansible.sh" in text
@@ -191,6 +191,8 @@ def test_user_scope_is_strictly_userspace_and_rejects_system_targets():
     assert 'path must stay inside user home for SCOPE=user' not in text
     assert 'UV_BIN must stay inside user home for SCOPE=user' not in text
     assert '( cd "$INSTALL_HOME" && runuser -u "$INSTALL_USER"' in text
+    assert '[ "${ANSIBLE_LOCAL_TEMP:-}" = "/root/.ansible/tmp" ] && unset ANSIBLE_LOCAL_TEMP' in text
+    assert '[ "${ANSIBLE_LOG_PATH:-}" = "/root/.ansible/ansible.log" ] && unset ANSIBLE_LOG_PATH' in text
     assert '( cd "$INSTALL_HOME" && sudo -u "$INSTALL_USER"' in text
     assert 'install_uv_fallback_with_python "$ANSIBLE_BIN_DIR"' in text
     assert 'UV_INSTALL_DIR="$ANSIBLE_BIN_DIR"' not in text
@@ -266,6 +268,9 @@ def test_user_scope_installs_idempotent_bashrc_activation():
 def test_profile_and_switch_are_path_parameterized_for_userspace():
     profile_text = PROFILE.read_text()
     switch_text = SWITCH.read_text()
+    assert 'if [ "${ANSIBLE_PROFILE_PATH:-}" != "$_ansible_profile_default_path" ]; then' in profile_text
+    assert 'unset ANSIBLE_HOME ANSIBLE_BIN_DIR ANSIBLE_PROFILE_PATH ANSIBLE_SWITCH_BIN' in profile_text
+    assert 'unset ANSIBLE_VENV_PATH VIRTUAL_ENV ANSIBLE_CONFIG ANSIBLE_LOCAL_TEMP ANSIBLE_LOG_PATH' in profile_text
     assert "ANSIBLE_BIN_DIR" in profile_text
     assert "ANSIBLE_SWITCH_BIN" in profile_text
     assert "ANSIBLE_PROFILE_PATH" in profile_text

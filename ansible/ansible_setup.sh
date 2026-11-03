@@ -1,7 +1,7 @@
 #!/bin/sh
 # uv-based local Ansible control-node installer for RHEL/Rocky/Alma-like hosts.
 # One-liner:
-#   curl -L https://raw.githubusercontent.com/joe-speedboat/ansible.installer/refs/heads/main/ansible/ansible_setup.sh | sudo -n sh
+#   curl -L https://raw.githubusercontent.com/Tuxbull-Open-Source/ansible.installer/refs/heads/main/ansible/ansible_setup.sh | sudo -n sh
 set -eu
 
 PYTHON_VERSION="${PYTHON_VERSION:-3.12}"
@@ -72,7 +72,7 @@ ANSIBLE_PIP_PACKAGES="${ANSIBLE_PIP_PACKAGES:-ansible==${ANSIBLE_VERSION} argcom
 # User scope keeps role-owned integration below ${ANSIBLE_HOME}/apps/profile.d/ansible.sh,
 # ${ANSIBLE_HOME}/apps/bin, and ${ANSIBLE_HOME}/apps/.ansible-uv-installer.
 # Package install pattern: uv pip install --python ${ANSIBLE_VENV_PATH}/bin/python ${ANSIBLE_PIP_PACKAGES}.
-RAW_BASE="${RAW_BASE:-https://raw.githubusercontent.com/joe-speedboat/ansible.installer/refs/heads/main}"
+RAW_BASE="${RAW_BASE:-https://raw.githubusercontent.com/Tuxbull-Open-Source/ansible.installer/refs/heads/main}"
 UV_BIN="${UV_BIN:-}"
 UV_PYTHON_INSTALL_DIR="${UV_PYTHON_INSTALL_DIR:-}"
 if [ -z "$UV_PYTHON_INSTALL_DIR" ] && [ "$SCOPE" = "system" ]; then
@@ -121,6 +121,14 @@ validate_user_scope_paths() {
 }
 
 run_as_install_user() {
+  # A root shell may have sourced the system profile before it starts this
+  # installer. Do not pass its root-only Ansible temp/log paths into commands
+  # executed as the selected non-root installation user.
+  if [ "$INSTALL_USER" != "root" ]; then
+    [ "${ANSIBLE_LOCAL_TEMP:-}" = "/root/.ansible/tmp" ] && unset ANSIBLE_LOCAL_TEMP
+    [ "${ANSIBLE_LOG_PATH:-}" = "/root/.ansible/ansible.log" ] && unset ANSIBLE_LOG_PATH
+  fi
+
   if [ "$(id -un)" = "$INSTALL_USER" ]; then
     ( cd "$INSTALL_HOME" && "$@" )
   elif [ "$(id -u)" -eq 0 ] && command -v runuser >/dev/null 2>&1; then
@@ -330,7 +338,7 @@ install_user_shell_activation() {
   cat >> "$tmp_bashrc" <<EOF_BASHRC
 
 $ANSIBLE_UV_BASHRC_MARKER_BEGIN
-# Managed by joe-speedboat/ansible.installer. Re-run the installer to update.
+# Managed by Tuxbull-Open-Source/ansible.installer. Re-run the installer to update.
 ANSIBLE_HOME="$ANSIBLE_HOME"
 ANSIBLE_BIN_DIR="$ANSIBLE_BIN_DIR"
 ANSIBLE_PROFILE_PATH="$ANSIBLE_PROFILE_PATH"

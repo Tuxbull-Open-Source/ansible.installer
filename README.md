@@ -57,7 +57,7 @@ curl -L ansible-uv.bitbull.ch | sudo -n sh
 GitHub URL:
 
 ```bash
-curl -L https://raw.githubusercontent.com/joe-speedboat/ansible.installer/refs/heads/main/ansible/ansible_setup.sh | sudo -n sh
+curl -L https://raw.githubusercontent.com/Tuxbull-Open-Source/ansible.installer/refs/heads/main/ansible/ansible_setup.sh | sudo -n sh
 ```
 
 Userspace install for the current login user, without sudo:
@@ -198,7 +198,7 @@ you want `/etc/profile.d`, `/etc/ansible`, or system-wide completion files.
 - `ANSIBLE_LOG_PATH=$HOME/.ansible/ansible.log`
 - `ANSIBLE_LINK_ETC=1` for `SCOPE=system`
 - `ANSIBLE_LINK_ETC=0` for `SCOPE=user`
-- `RAW_BASE=https://raw.githubusercontent.com/joe-speedboat/ansible.installer/refs/heads/main`
+- `RAW_BASE=https://raw.githubusercontent.com/Tuxbull-Open-Source/ansible.installer/refs/heads/main`
 - `UV_BIN=/usr/local/bin/uv` in the default system layout; userspace installs auto-place `uv` under `${ANSIBLE_HOME}/apps/bin/uv` when missing
 - `UV_PYTHON_INSTALL_DIR=/opt/ansible/apps/python` in the default system layout, so virtualenv Python symlinks point either to system Python or a shared uv-managed Python, never below root-private paths such as `/root/.local/share/uv`
 - `ANSIBLE_PIP_PACKAGES=ansible==${ANSIBLE_VERSION} argcomplete passlib jmespath netaddr dnspython`
