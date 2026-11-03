@@ -6,7 +6,9 @@ ADOC = ROOT / "ansible" / "files" / "usr" / "local" / "bin" / "adoc"
 PROFILE = ROOT / "ansible" / "files" / "etc" / "profile.d" / "ansible.sh"
 SWITCH = ROOT / "ansible" / "files" / "usr" / "local" / "bin" / "ansible-local-switch"
 README = ROOT / "README.md"
-AGENT = ROOT / "AGENT.md"
+AGENT = ROOT / "AGENTS.md"
+REQUIREMENTS = ROOT / "requirements.txt"
+COLLECTION_REQUIREMENTS = ROOT / "collections" / "requirements.yml"
 CHANGELOG = ROOT / "CHANGELOG.md"
 
 
@@ -15,7 +17,9 @@ def test_installer_files_exist():
     assert ADOC.exists(), "adoc must be vendored under ansible/files/usr/local/bin"
     assert PROFILE.exists(), "profile script must be outsourced under ansible/files/etc/profile.d"
     assert SWITCH.exists(), "switch helper must be outsourced under ansible/files/usr/local/bin"
-    assert AGENT.exists(), "AGENT.md must document maintainer and agent workflow"
+    assert AGENT.exists(), "AGENTS.md must document maintainer and agent workflow"
+    assert REQUIREMENTS.exists(), "requirements.txt must define the default Python baseline"
+    assert COLLECTION_REQUIREMENTS.exists(), "collections/requirements.yml must define optional controller collections"
     assert CHANGELOG.exists(), "CHANGELOG.md must document release history"
 
 
@@ -38,7 +42,7 @@ def test_release_docs_cover_v1_0_0_and_maintenance_workflow():
 
 def test_one_liner_documented():
     text = README.read_text()
-    marker = "curl -L https://raw.githubusercontent.com/joe-speedboat/ansible.installer/refs/heads/main/ansible/ansible_setup.sh | sudo -n sh"
+    marker = "curl -L https://raw.githubusercontent.com/Tuxbull-Open-Source/ansible.installer/refs/heads/main/ansible/ansible_setup.sh | sudo -n sh"
     assert marker in text
     assert text.count(marker) == 1
 
@@ -87,7 +91,7 @@ def test_readme_documents_supported_variables_with_examples():
 def test_installer_uses_single_repo_for_payload_files():
     text = SETUP.read_text()
     assert "RAW_BASE" in text
-    assert "joe-speedboat/ansible.installer" in text
+    assert "Tuxbull-Open-Source/ansible.installer" in text
     assert "linux.scripts" not in text, "payload files must come from ansible.installer, not another repo"
     assert "ansible/files/usr/local/bin/adoc" in text
     assert "ansible/files/etc/profile.d/ansible.sh" in text
@@ -150,12 +154,8 @@ def test_installer_contains_target_architecture_markers():
         "ansible-local-switch",
         "ANSIBLE_VERSION",
         "uv pip install",
-        "ansible==${ANSIBLE_VERSION}",
-        "argcomplete",
-        "passlib",
-        "jmespath",
-        "netaddr",
-        "dnspython",
+        "ANSIBLE_REQUIREMENTS_FILE",
+        "requirements.txt",
         "/etc/ansible",
     ]
     for marker in required:
@@ -191,6 +191,8 @@ def test_user_scope_is_strictly_userspace_and_rejects_system_targets():
     assert 'path must stay inside user home for SCOPE=user' not in text
     assert 'UV_BIN must stay inside user home for SCOPE=user' not in text
     assert '( cd "$INSTALL_HOME" && runuser -u "$INSTALL_USER"' in text
+    assert '[ "${ANSIBLE_LOCAL_TEMP:-}" = "/root/.ansible/tmp" ] && unset ANSIBLE_LOCAL_TEMP' in text
+    assert '[ "${ANSIBLE_LOG_PATH:-}" = "/root/.ansible/ansible.log" ] && unset ANSIBLE_LOG_PATH' in text
     assert '( cd "$INSTALL_HOME" && sudo -u "$INSTALL_USER"' in text
     assert 'install_uv_fallback_with_python "$ANSIBLE_BIN_DIR"' in text
     assert 'UV_INSTALL_DIR="$ANSIBLE_BIN_DIR"' not in text
@@ -266,6 +268,9 @@ def test_user_scope_installs_idempotent_bashrc_activation():
 def test_profile_and_switch_are_path_parameterized_for_userspace():
     profile_text = PROFILE.read_text()
     switch_text = SWITCH.read_text()
+    assert 'if [ "${ANSIBLE_PROFILE_PATH:-}" != "$_ansible_profile_default_path" ]; then' in profile_text
+    assert 'unset ANSIBLE_HOME ANSIBLE_BIN_DIR ANSIBLE_PROFILE_PATH ANSIBLE_SWITCH_BIN' in profile_text
+    assert 'unset ANSIBLE_VENV_PATH VIRTUAL_ENV ANSIBLE_CONFIG ANSIBLE_LOCAL_TEMP ANSIBLE_LOG_PATH' in profile_text
     assert "ANSIBLE_BIN_DIR" in profile_text
     assert "ANSIBLE_SWITCH_BIN" in profile_text
     assert "ANSIBLE_PROFILE_PATH" in profile_text
@@ -295,9 +300,9 @@ def test_installer_marks_and_allows_ansible_uv_reruns():
     text = SETUP.read_text()
     assert "ANSIBLE_UV_MARKER" in text
     assert ".ansible-uv-installer" in text
-    assert "uv pip install --upgrade" in text
+    assert 'run_uv_as_install_user pip install --upgrade --python "$ANSIBLE_VENV_PATH/bin/python" -r "$requirements_rendered"' in text
     assert "ANSIBLE_PIP_PACKAGES" in text
-    assert "passlib" in text
+    assert "passlib" in REQUIREMENTS.read_text()
     assert "This is an ansible-uv managed installation; continuing" in text
 
 
@@ -341,13 +346,30 @@ def test_outsourced_shell_files_have_markers():
     assert '[ -x "$runtime_dir/bin/ansible" ] || continue' in switch_text
 
 
+def test_installer_uses_version_rendered_requirements_manifest_by_default():
+    setup_text = SETUP.read_text()
+    requirements_text = REQUIREMENTS.read_text()
+    collections_text = COLLECTION_REQUIREMENTS.read_text()
+    assert 'ANSIBLE_PIP_PACKAGES_MODE=manifest' in setup_text
+    assert 'requirements_source="${ANSIBLE_REQUIREMENTS_FILE:-$RAW_BASE/requirements.txt}"' in setup_text
+    assert 'run_uv_as_install_user pip install --upgrade --python "$ANSIBLE_VENV_PATH/bin/python" -r "$requirements_rendered"' in setup_text
+    assert 'ANSIBLE_PIP_PACKAGES_MODE=explicit' in setup_text
+    for requirement in ('ansible==@ANSIBLE_VERSION@', 'requests>=2.31.0,<3.0.0', 'urllib3>=2.0.0,<3.0.0', 'certifi>=2023.0.0', 'six>=1.16.0'):
+        assert requirement in requirements_text
+    for collection in ('ansible.windows', 'community.windows', 'community.general', 'ansible.posix'):
+        assert collection in collections_text
+
+
 def test_installer_installs_default_control_node_pip_packages_and_documents_extension():
     setup_text = SETUP.read_text()
     profile_text = PROFILE.read_text()
     readme_text = README.read_text()
-    assert 'ANSIBLE_PIP_PACKAGES="${ANSIBLE_PIP_PACKAGES:-ansible==${ANSIBLE_VERSION} argcomplete passlib jmespath netaddr dnspython}"' in setup_text
-    assert 'run_uv_as_install_user pip install --upgrade --python "$ANSIBLE_VENV_PATH/bin/python" $ANSIBLE_PIP_PACKAGES' in setup_text
+    assert 'ANSIBLE_PIP_PACKAGES_MODE=manifest' in setup_text
+    assert 'ANSIBLE_PIP_PACKAGES_MODE=explicit' in setup_text
+    assert 'ANSIBLE_REQUIREMENTS_FILE' in setup_text
+    assert 'run_uv_as_install_user pip install --upgrade --python "$ANSIBLE_VENV_PATH/bin/python" -r "$requirements_rendered"' in setup_text
     assert 'alias ansible-pip-install=' in profile_text
     assert 'uv pip install --upgrade --python "$ANSIBLE_VENV_PATH/bin/python"' in profile_text
     assert "ansible-pip-install passlib" in readme_text
-    assert "ANSIBLE_PIP_PACKAGES='ansible==13.4.0 argcomplete passlib jmespath netaddr dnspython pywinrm requests-ntlm'" in readme_text
+    assert "ANSIBLE_REQUIREMENTS_FILE" in readme_text
+    assert "collections/requirements.yml" in readme_text

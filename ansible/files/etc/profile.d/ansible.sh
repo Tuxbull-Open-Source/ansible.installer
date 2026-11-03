@@ -1,7 +1,18 @@
 #!/bin/bash
-# ansible-uv managed shell integration. Installed by joe-speedboat/ansible.installer.
+# ansible-uv managed shell integration. Installed by Tuxbull-Open-Source/ansible.installer.
 ANSIBLE_UV_INSTALLER=1
 export ANSIBLE_UV_INSTALLER
+
+# A userspace profile can be sourced from a shell which previously loaded the
+# system profile. Its generated profile path is authoritative: reset inherited
+# system runtime variables before applying this profile's own defaults.
+_ansible_profile_default_path="@ANSIBLE_PROFILE_PATH@"
+if [ "${ANSIBLE_PROFILE_PATH:-}" != "$_ansible_profile_default_path" ]; then
+  unset ANSIBLE_HOME ANSIBLE_BIN_DIR ANSIBLE_PROFILE_PATH ANSIBLE_SWITCH_BIN
+  unset PYTHON_VERSION ANSIBLE_VERSION ANSIBLE_CORE_VERSION ANSIBLE_RUNTIME
+  unset ANSIBLE_VENV_PATH VIRTUAL_ENV ANSIBLE_CONFIG ANSIBLE_LOCAL_TEMP ANSIBLE_LOG_PATH
+fi
+unset _ansible_profile_default_path
 
 export ANSIBLE_HOME="${ANSIBLE_HOME:-@ANSIBLE_HOME@}"
 export ANSIBLE_BIN_DIR="${ANSIBLE_BIN_DIR:-@ANSIBLE_BIN_DIR@}"

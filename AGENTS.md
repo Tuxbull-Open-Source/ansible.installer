@@ -1,6 +1,6 @@
-# AGENT.md
+# AGENTS.md
 
-Operational guide for AI agents and maintainers working on `joe-speedboat/ansible.installer`.
+Operational guide for AI agents and maintainers working on `Tuxbull-Open-Source/ansible.installer`.
 
 ## Project purpose
 
@@ -26,7 +26,7 @@ curl -L ansible-uv.bitbull.ch | sudo -n sh
 or directly from GitHub raw:
 
 ```bash
-curl -L https://raw.githubusercontent.com/joe-speedboat/ansible.installer/refs/heads/main/ansible/ansible_setup.sh | sudo -n sh
+curl -L https://raw.githubusercontent.com/Tuxbull-Open-Source/ansible.installer/refs/heads/main/ansible/ansible_setup.sh | sudo -n sh
 ```
 
 ## Repository layout
@@ -34,7 +34,7 @@ curl -L https://raw.githubusercontent.com/joe-speedboat/ansible.installer/refs/h
 ```text
 README.md
 CHANGELOG.md
-AGENT.md
+AGENTS.md
 ansible/ansible_setup.sh
 ansible/files/etc/profile.d/ansible.sh
 ansible/files/usr/local/bin/ansible-local-switch
@@ -57,7 +57,7 @@ Keep these properties intact:
 7. **User scope stays userspace.** `SCOPE=user` must not modify `/etc`, `/usr/local/bin`, or `/opt` and must reject `ANSIBLE_LINK_ETC=1`.
 8. **Safe reruns.** Rerunning on an ansible-uv managed host must reuse or repair the runtime and preserve existing operational config such as `${ANSIBLE_HOME}/ansible.cfg`.
 9. **No Python bytecode permission drift.** Runtime/profile usage should set `PYTHONDONTWRITEBYTECODE=1`; reruns should remove `__pycache__` directories before final permission normalization.
-10. **Controller-side Python package defaults.** The default `ANSIBLE_PIP_PACKAGES` list should keep common Ansible controller dependencies available: `ansible==${ANSIBLE_VERSION}`, `argcomplete`, `passlib`, `jmespath`, `netaddr`, and `dnspython`.
+10. **Controller-side Python package defaults.** The default `requirements.txt` baseline should keep common Ansible controller dependencies available: `ansible==${ANSIBLE_VERSION}`, `argcomplete`, `passlib`, `jmespath`, `netaddr`, and `dnspython`.
 11. **Runtime package extension.** Interactive shells should expose `ansible-pip-install` as a safe wrapper around `uv pip install --upgrade --python "$ANSIBLE_VENV_PATH/bin/python"` so operators install extra packages into the active Ansible runtime, not into system Python.
 
 ## Implementation rules
@@ -68,7 +68,7 @@ Keep these properties intact:
 - Do not introduce external payload dependencies from other repositories. Payload files should come from this repository through `RAW_BASE`.
 - Do not use real internal hostnames, inventories, passwords, tokens or private URLs in public examples. Use `example.com`, placeholders, or public project URLs.
 - If adding packages to `ANSIBLE_PIP_PACKAGES`, document why they are useful for controller-side Ansible usage and keep the list reasonably small.
-- If changing install paths, update `README.md`, `AGENT.md`, and `tests/test_installer_static.py` together.
+- If changing install paths, update `README.md`, `AGENTS.md`, and `tests/test_installer_static.py` together.
 
 ## Development checks
 
@@ -87,7 +87,7 @@ Also scan public docs and examples before pushing:
 
 ```bash
 grep -RInE 'sun\.bitbull\.ch|192\.168\.|password\s*=|BEGIN [A-Z ]*PRIVATE KEY|g[h]p_|github_[p]at_|to[k]en=|se[c]ret=' \
-  -- README.md CHANGELOG.md AGENT.md ansible tests || true
+  -- README.md CHANGELOG.md AGENTS.md ansible tests || true
 ```
 
 Inspect matches and make sure no actual secret value is present.
@@ -164,6 +164,6 @@ For public release validation after merge, test the exact public one-liner on a 
 3. Run lab validation for installer behavior changes.
 4. Secret-scan public docs and examples.
 5. Commit and push to a branch or fork.
-6. Open or update a PR to `joe-speedboat/ansible.installer:main`.
+6. Open or update a PR to `Tuxbull-Open-Source/ansible.installer:main`.
 7. Verify the PR is open and its `headRefOid` matches the pushed commit.
 8. After merge, create the `vX.Y.Z` tag from the merged upstream `main` using an account with upstream write permission.

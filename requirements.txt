@@ -1,0 +1,15 @@
+# Default controller-side Python requirements for ansible.installer.
+#
+# This intentionally contains only broadly useful, pure-Python dependencies.
+# Install cloud, virtualization, database, or vendor SDKs explicitly through
+# ANSIBLE_PIP_PACKAGES or a project-local requirements file.
+ansible==@ANSIBLE_VERSION@
+argcomplete
+passlib
+jmespath
+netaddr
+dnspython
+requests>=2.31.0,<3.0.0
+urllib3>=2.0.0,<3.0.0
+certifi>=2023.0.0
+six>=1.16.0
