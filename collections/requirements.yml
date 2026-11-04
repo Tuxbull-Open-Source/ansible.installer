@@ -1,0 +1,12 @@
+---
+# Common controller collections. Install only when a project requires them:
+# ansible-galaxy collection install -r collections/requirements.yml
+collections:
+  - name: ansible.windows
+    version: '>=3.0.0'
+  - name: community.windows
+    version: '>=3.0.0'
+  - name: community.general
+    version: '>=11.0.0'
+  - name: ansible.posix
+    version: '>=2.0.0'
